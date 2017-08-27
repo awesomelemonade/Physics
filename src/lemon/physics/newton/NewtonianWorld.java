@@ -3,9 +3,9 @@ package lemon.physics.newton;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import lemon.engine.math.Vector3D;
-import lemon.physics.CollisionSystem;
 import lemon.physics.EulerIntegrator;
 import lemon.physics.Integrator;
 import lemon.physics.PhysicsEntity;
@@ -19,12 +19,14 @@ public class NewtonianWorld implements World<Vector3D> {
 	private Set<PhysicsEntity<Vector3D>> entities;
 	
 	private Integrator<Vector3D> integrator;
-	private CollisionSystem<Vector3D> collisionSystem;
+	private Consumer<Map<PhysicsEntity<Vector3D>, QueuedDisplacement<Vector3D>>> collisionSystem;
 	
 	public NewtonianWorld(){
+		this(queuedDisplacement->{/* Do Nothing */});
+	}
+	public NewtonianWorld(Consumer<Map<PhysicsEntity<Vector3D>, QueuedDisplacement<Vector3D>>> collisionSystem){
 		entities = new HashSet<PhysicsEntity<Vector3D>>();
 		integrator = new EulerIntegrator<Vector3D>(Vector3D.supplier); //Euler Integration
-		collisionSystem = new NewtonianCollisionSystem();
 	}
 	@Override
 	public void update(float delta) {
@@ -34,7 +36,7 @@ public class NewtonianWorld implements World<Vector3D> {
 		}
 		Map<PhysicsEntity<Vector3D>, QueuedDisplacement<Vector3D>> queuedDisplacements = integrator.integrate(entities, delta);
 		
-		collisionSystem.resolve(queuedDisplacements);
+		collisionSystem.accept(queuedDisplacements);
 		
 		//Apply Displacements
 		for(PhysicsEntity<Vector3D> entity: queuedDisplacements.keySet()){
